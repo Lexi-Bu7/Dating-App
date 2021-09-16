@@ -24,13 +24,15 @@ namespace API
         public Startup(IConfiguration config)
         {
             _config = config;
-
-
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy => policy.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod());
+            });
 
             //inject datacontext'subclass'DataContext' into APP
             services.AddDbContext<DataContext>(options =>
@@ -57,6 +59,8 @@ namespace API
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors();
 
             app.UseAuthorization();
 
