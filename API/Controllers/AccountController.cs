@@ -18,21 +18,37 @@ namespace API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<AppUser>> Register(RegisterDto registerdto){
-            if(await UserExists(registerdto.Username)) return BadRequest("Username is taken.");
+        public async Task<ActionResult<AppUser>> Register(RegisterDto registerDto){
+            if(await UserExists(registerDto.Username)) return BadRequest("Username is taken.");
 
             using var hmac = new HMACSHA512();
 
             var user = new AppUser
             {
-                UserName = registerdto.Username.ToLower(),
-                PasswordHash  = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerdto.Password)),
+                UserName = registerDto.Username.ToLower(),
+                PasswordHash  = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password)),
                 PasswordSalt =  hmac.Key
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
+            return user;
+        }
+        
+        [HttpPost("login")]
+        public async Task<ActionResult<AppUser>> Login(LoginDto loginDto){
+            var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == loginDto.Username);
+
+            if (user == null) return Unauthorized("Invalid Username");
+
+            using var hmac = new HMACSHA512(user.PasswordSalt);
+
+            var computerHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
+
+            for(int i =0; i<computerHash.Length; i++){
+                if(computerHash[i]!=user.PasswordHash[i]) return Unauthorized("Invalid Password");
+            }
             return user;
         }
 
