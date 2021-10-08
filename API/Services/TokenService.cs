@@ -1,13 +1,45 @@
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using API.Entities;
-using API.Interface;
+using API.Interfaces;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace API.Services
 {
     public class TokenService : ITokenService
     {
+        private readonly  SymmetricSecurityKey _key;
+        public TokenService(IConfiguration config)
+        {
+            _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["TokenKey"]));
+        }
+
         public string CreateToken(AppUser user)
         {
-            throw new System.NotImplementedException();
+            var claims = new List<Claim>{
+                new Claim(JwtRegisteredClaimNames.Jti, user.UserName)
+            };
+
+            var Creds =new SigningCredentials(_key,SecurityAlgorithms.HmacSha256);
+
+            var TokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.Now.AddDays(7),
+                SigningCredentials = Creds
+            };  
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(TokenDescriptor);
+
+            return tokenHandler.WriteToken(token);
+
         }
+
+        
     }
 }

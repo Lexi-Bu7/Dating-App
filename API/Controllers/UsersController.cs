@@ -17,6 +17,8 @@ namespace API.Controllers
             _context = context;
         }
 
+        // private Datacontext context = new Datacontext();
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AppUser>>> GetUsers()
         {
